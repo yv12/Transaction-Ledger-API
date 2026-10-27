@@ -5,6 +5,17 @@ A complete full-stack transaction ledger platform featuring an ACID-compliant Py
 
 ---
 
+## 📦 Submission Deliverables
+
+| # | Deliverable | Location | Description |
+| :-: | :--- | :--- | :--- |
+| **1** | **Source Code** | [`backend/`](backend/) & [`frontend/`](frontend/) | Full-stack implementation: FastAPI, SQLite, Pydantic v2, Vite & Vanilla CSS UI |
+| **2** | **README** | [`README.md`](README.md) | System overview, local quickstart, automated test runner & Railway guide |
+| **3** | **API Documentation** | [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) | Complete REST API specs, error codes, cURL examples & Swagger UI links |
+| **4** | **Assumptions** | [`ASSUMPTIONS.md`](ASSUMPTIONS.md) | Financial precision, concurrency write locks, immutability & design trade-offs |
+
+---
+
 ## 🏗️ Repository Architecture
 
 The codebase is cleanly separated into two distinct components:
