@@ -99,7 +99,7 @@ body {
 }
 
 .header-container {
-  max-width: 1380px;
+  max-width: min(1650px, 96vw);
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -294,7 +294,7 @@ body {
    ========================================================================== */
 
 .main-content {
-  max-width: 1380px;
+  max-width: min(1650px, 96vw);
   margin: 2rem auto;
   padding: 0 1.5rem;
 }
@@ -631,6 +631,201 @@ body {
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   ADMIN PARALLEL TABLES & LIVE AUDIT LEDGER WORKSPACE
+   ========================================================================== */
+
+.admin-view-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.admin-view-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-subtle);
+  padding: 0.3rem;
+  border-radius: var(--radius-md);
+}
+
+.admin-view-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.admin-view-tab-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-view-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-view-tab-btn.active {
+  color: #fff;
+  background: var(--accent-primary);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+}
+
+.tab-badge {
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pulse-mini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+  animation: livePulseMini 1.8s infinite ease-in-out;
+}
+
+@keyframes livePulseMini {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.6; }
+}
+
+.admin-live-ticker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.live-indicator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.live-indicator-badge:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+.live-indicator-badge.paused {
+  background: rgba(100, 116, 139, 0.15);
+  border-color: rgba(100, 116, 139, 0.3);
+  color: var(--text-muted);
+}
+
+.live-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  animation: livePulse 2s infinite ease-in-out;
+}
+
+.live-indicator-badge.paused .live-pulse-dot {
+  background-color: var(--text-muted);
+  box-shadow: none;
+  animation: none;
+}
+
+.live-sync-time {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+}
+
+.admin-parallel-grid {
+  display: grid;
+  grid-template-columns: minmax(460px, 1fr) minmax(540px, 1.25fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.admin-parallel-grid .table-card {
+  margin-bottom: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-parallel-grid .ledger-table-container {
+  flex: 1;
+}
+
+@media (max-width: 1200px) {
+  .admin-parallel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-parallel-grid.view-accounts-only {
+  grid-template-columns: 1fr;
+}
+.admin-parallel-grid.view-accounts-only #admin-card-transactions {
+  display: none !important;
+}
+
+.admin-parallel-grid.view-transactions-only {
+  grid-template-columns: 1fr;
+}
+.admin-parallel-grid.view-transactions-only #admin-card-accounts {
+  display: none !important;
+}
+
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.new-row-pulse {
+  animation: highlightRow 2.5s ease-out;
+}
+
+@keyframes highlightRow {
+  0% { background: rgba(99, 102, 241, 0.25); }
+  100% { background: transparent; }
 }
 
 /* ==========================================================================

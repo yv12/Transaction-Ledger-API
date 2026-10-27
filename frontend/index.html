@@ -141,100 +141,149 @@
         </div>
       </div>
 
-      <!-- Accounts Table -->
-      <div class="table-card">
-        <div class="table-controls">
-          <div class="search-input-wrapper">
+      <!-- Admin Workspace Layout Switcher Tabs & Live Status -->
+      <div class="admin-view-header-row">
+        <div class="admin-view-tabs" role="tablist" aria-label="Admin Tables View Mode">
+          <button id="admin-tab-parallel" class="admin-view-tab-btn active" role="tab" aria-selected="true" title="Side-by-side parallel view of Account Holders and Live Transactions">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <rect x="3" y="3" width="8" height="18" rx="2"/>
+              <rect x="13" y="3" width="8" height="18" rx="2"/>
             </svg>
-            <input type="text" id="admin-search-input" class="search-input" placeholder="Search by name or account ID...">
-          </div>
-          <button id="admin-refresh-accounts-btn" class="btn btn-secondary btn-sm">
+            <span>Parallel Tables</span>
+            <span class="tab-badge">Side by Side</span>
+          </button>
+          <button id="admin-tab-accounts" class="admin-view-tab-btn" role="tab" aria-selected="false" title="View Account Holders table full width">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M23 4v6h-6M1 20v-6h6"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
-            Refresh
+            <span>Account Holders</span>
+          </button>
+          <button id="admin-tab-transactions" class="admin-view-tab-btn" role="tab" aria-selected="false" title="View Live Audit Ledger table full width">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span>Live Audit Ledger</span>
+            <span class="pulse-mini-dot"></span>
           </button>
         </div>
 
-        <div class="ledger-table-container">
-          <table class="ledger-table">
-            <thead>
-              <tr>
-                <th>Account Holder</th>
-                <th>Account ID</th>
-                <th>Balance</th>
-                <th>Created (IST)</th>
-                <th style="text-align: right;">Administrative Actions</th>
-              </tr>
-            </thead>
-            <tbody id="admin-accounts-tbody">
-              <!-- Populated dynamically via JS -->
-            </tbody>
-          </table>
+        <!-- Live Sync Status Banner -->
+        <div class="admin-live-ticker">
+          <button id="admin-live-toggle-btn" class="live-indicator-badge" title="Click to pause or resume live real-time sync">
+            <span class="live-pulse-dot"></span>
+            <span id="admin-live-text">LIVE SYNC</span>
+          </button>
+          <span id="admin-live-last-sync" class="live-sync-time">Updated just now</span>
         </div>
       </div>
 
-      <!-- System-Wide Recent Transactions (Admin Audit Journal) -->
-      <div class="table-card" style="margin-top: 2rem;">
-        <div class="table-controls" style="flex-wrap: wrap; gap: 0.75rem;">
-          <div style="display: flex; align-items: center; gap: 0.6rem;">
-            <div class="section-title" style="font-size: 1.15rem; margin-bottom: 0;">System-Wide Transactions</div>
-            <span class="role-tag admin" style="font-size: 0.7rem;">Live Audit Ledger</span>
+      <!-- Parallel Split Container (Account Holders & Live Audit Ledger side-by-side) -->
+      <div id="admin-parallel-container" class="admin-parallel-grid">
+        <!-- Panel 1: Account Holders Table -->
+        <div id="admin-card-accounts" class="table-card">
+          <div class="table-controls" style="flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <div class="section-title" style="font-size: 1.15rem; margin-bottom: 0;">Account Holders</div>
+              <span id="admin-accounts-count-badge" class="badge-count">0 Accounts</span>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center; margin-left: auto; flex-wrap: wrap;">
+              <div class="search-input-wrapper" style="min-width: 190px; max-width: 250px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="admin-search-input" class="search-input" placeholder="Search accounts...">
+              </div>
+              <button id="admin-refresh-accounts-btn" class="btn btn-secondary btn-sm" title="Refresh accounts directory">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 4v6h-6M1 20v-6h6"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
           </div>
 
-          <div style="display: flex; gap: 0.5rem; align-items: center; margin-left: auto; flex-wrap: wrap;">
-            <div class="search-input-wrapper" style="max-width: 260px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input type="text" id="admin-tx-search" class="search-input" placeholder="Search narration or ref...">
-            </div>
-
-            <div class="filter-chips">
-              <button id="admin-tx-filter-all" class="filter-chip active" data-tx-filter="">All</button>
-              <button id="admin-tx-filter-credit" class="filter-chip" data-tx-filter="credit">Credits</button>
-              <button id="admin-tx-filter-debit" class="filter-chip" data-tx-filter="debit">Debits</button>
-            </div>
-
-            <button id="admin-refresh-tx-btn" class="btn btn-secondary btn-sm" title="Refresh global transactions">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M23 4v6h-6M1 20v-6h6"/>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-              </svg>
-              Refresh
-            </button>
+          <div class="ledger-table-container">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>Account Holder</th>
+                  <th>Account ID</th>
+                  <th>Balance</th>
+                  <th>Created (IST)</th>
+                  <th style="text-align: right;">Administrative Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-accounts-tbody">
+                <!-- Populated dynamically via JS -->
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div class="ledger-table-container">
-          <table class="ledger-table">
-            <thead>
-              <tr>
-                <th>Account</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>Reference ID</th>
-                <th>Description</th>
-                <th>Created (Latest First)</th>
-              </tr>
-            </thead>
-            <tbody id="admin-global-tx-tbody">
-              <!-- Populated dynamically via JS -->
-            </tbody>
-          </table>
-        </div>
+        <!-- Panel 2: System-Wide Recent Transactions (Live Audit Ledger) -->
+        <div id="admin-card-transactions" class="table-card">
+          <div class="table-controls" style="flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <div class="section-title" style="font-size: 1.15rem; margin-bottom: 0;">Live Audit Ledger</div>
+              <span class="role-tag admin" style="font-size: 0.7rem;">System-Wide</span>
+            </div>
 
-        <div id="admin-tx-pagination-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-top: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-muted);">
-          <span id="admin-tx-total-count">Showing latest transactions</span>
-          <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <button id="admin-tx-prev-btn" class="btn btn-secondary btn-sm" disabled>&larr; Prev</button>
-            <span id="admin-tx-page-indicator" style="font-weight: 600; padding: 0 0.5rem; color: #fff;">Page 1</span>
-            <button id="admin-tx-next-btn" class="btn btn-secondary btn-sm" disabled>Next &rarr;</button>
+            <div style="display: flex; gap: 0.5rem; align-items: center; margin-left: auto; flex-wrap: wrap;">
+              <div class="search-input-wrapper" style="min-width: 170px; max-width: 220px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="admin-tx-search" class="search-input" placeholder="Search narration or ref...">
+              </div>
+
+              <div class="filter-chips">
+                <button id="admin-tx-filter-all" class="filter-chip active" data-tx-filter="">All</button>
+                <button id="admin-tx-filter-credit" class="filter-chip" data-tx-filter="credit">Credits</button>
+                <button id="admin-tx-filter-debit" class="filter-chip" data-tx-filter="debit">Debits</button>
+              </div>
+
+              <button id="admin-refresh-tx-btn" class="btn btn-secondary btn-sm" title="Refresh global transactions">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 4v6h-6M1 20v-6h6"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="ledger-table-container">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Reference ID</th>
+                  <th>Description</th>
+                  <th>Created (Latest First)</th>
+                </tr>
+              </thead>
+              <tbody id="admin-global-tx-tbody">
+                <!-- Populated dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="admin-tx-pagination-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-top: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-muted); margin-top: auto;">
+            <span id="admin-tx-total-count">Showing latest transactions</span>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button id="admin-tx-prev-btn" class="btn btn-secondary btn-sm" disabled>&larr; Prev</button>
+              <span id="admin-tx-page-indicator" style="font-weight: 600; padding: 0 0.5rem; color: #fff;">Page 1</span>
+              <button id="admin-tx-next-btn" class="btn btn-secondary btn-sm" disabled>Next &rarr;</button>
+            </div>
           </div>
         </div>
       </div>

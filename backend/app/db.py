@@ -50,7 +50,8 @@ def init_db(path: str) -> None:
 
 def connect(path: str) -> sqlite3.Connection:
     # isolation_level=None: we control BEGIN/COMMIT ourselves.
-    conn = sqlite3.connect(path, isolation_level=None, timeout=10)
+    # check_same_thread=False allows FastAPI threadpool workers to safely use request-scoped connections.
+    conn = sqlite3.connect(path, check_same_thread=False, isolation_level=None, timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     return conn

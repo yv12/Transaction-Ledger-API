@@ -207,9 +207,10 @@ def get_all_transactions(
         where += " AND t.type = ?"
         params.append(tx_type)
     if search:
-        where += " AND (t.description LIKE ? OR t.reference_id LIKE ? OR a.name LIKE ?)"
+        where += " AND (t.description LIKE ? OR t.reference_id LIKE ? OR a.name LIKE ? OR t.account_id LIKE ? OR t.id LIKE ?)"
         term = f"%{search.strip()}%"
-        params.extend([term, term, term])
+        params.extend([term, term, term, term, term])
+
 
     count_sql = f"SELECT COUNT(*) FROM transactions t JOIN accounts a ON t.account_id = a.id WHERE {where}"
     total = conn.execute(count_sql, params).fetchone()[0]

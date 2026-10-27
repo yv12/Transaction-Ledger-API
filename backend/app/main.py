@@ -24,7 +24,15 @@ from .schemas import (
 
 
 def create_app(db_path: Optional[str] = None) -> FastAPI:
-    db_path = db_path or os.getenv("LEDGER_DB", "ledger.db")
+    if not db_path:
+        db_path = os.getenv("LEDGER_DB")
+        if not db_path:
+            if os.path.exists("ledger.db"):
+                db_path = "ledger.db"
+            elif os.path.exists("../ledger.db"):
+                db_path = "../ledger.db"
+            else:
+                db_path = "ledger.db"
     init_db(db_path)
 
     app = FastAPI(title="Transaction Ledger API", version="1.0.0")

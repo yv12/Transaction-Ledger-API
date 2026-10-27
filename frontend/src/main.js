@@ -123,6 +123,16 @@ const elements = {
   modalStmtFilterCredit: document.getElementById('modal-stmt-filter-credit'),
   modalStmtFilterDebit: document.getElementById('modal-stmt-filter-debit'),
 
+  // Admin Workspace Tabs & Parallel Grid
+  adminTabParallel: document.getElementById('admin-tab-parallel'),
+  adminTabAccounts: document.getElementById('admin-tab-accounts'),
+  adminTabTransactions: document.getElementById('admin-tab-transactions'),
+  adminParallelContainer: document.getElementById('admin-parallel-container'),
+  adminAccountsCountBadge: document.getElementById('admin-accounts-count-badge'),
+  adminLiveToggleBtn: document.getElementById('admin-live-toggle-btn'),
+  adminLiveText: document.getElementById('admin-live-text'),
+  adminLiveLastSync: document.getElementById('admin-live-last-sync'),
+
   toastContainer: document.getElementById('toast-container'),
 };
 
@@ -140,6 +150,11 @@ let lastAdminPaginationData = null;
 
 let modalStmtAccountId = null;
 let modalStmtFilter = '';
+
+// Live Auto-Refresh State
+let adminLivePaused = false;
+let adminLatestTxId = null;
+let adminPollInterval = null;
 
 
 // ==========================================
@@ -286,6 +301,9 @@ function renderAdminTable() {
   const totalDeposits = accounts.reduce((acc, curr) => acc + (Number(curr.balance) || 0), 0);
   elements.statTotalDeposits.textContent = formatCurrency(totalDeposits);
   elements.statTotalAccounts.textContent = accounts.length.toLocaleString();
+  if (elements.adminAccountsCountBadge) {
+    elements.adminAccountsCountBadge.textContent = `${filtered.length} Account${filtered.length === 1 ? '' : 's'}`;
+  }
 
   // Render Table
   if (filtered.length === 0) {
@@ -379,16 +397,18 @@ function renderAdminTable() {
 // ==========================================
 // ADMIN GLOBAL TRANSACTIONS (LATEST FIRST)
 // ==========================================
-async function loadAdminGlobalTransactions() {
+async function loadAdminGlobalTransactions(silent = false) {
   if (!elements.adminGlobalTxTbody) return;
 
-  elements.adminGlobalTxTbody.innerHTML = `
-    <tr>
-      <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-        Loading system-wide transactions...
-      </td>
-    </tr>
-  `;
+  if (!silent && !elements.adminGlobalTxTbody.children.length) {
+    elements.adminGlobalTxTbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          Loading system-wide transactions...
+        </td>
+      </tr>
+    `;
+  }
 
   try {
     const searchTerm = (elements.adminTxSearch?.value || '').trim();
@@ -401,6 +421,11 @@ async function loadAdminGlobalTransactions() {
 
     const txs = res.data || [];
     lastAdminPaginationData = res.pagination;
+
+    // Check if new transaction arrived at the top
+    const newestTxId = txs.length > 0 ? txs[0].id : null;
+    const isNewTx = adminLatestTxId && newestTxId && adminLatestTxId !== newestTxId;
+    adminLatestTxId = newestTxId;
 
     if (elements.adminTxTotalCount) {
       elements.adminTxTotalCount.textContent = `${res.pagination.total_records} transaction${res.pagination.total_records === 1 ? '' : 's'} across all accounts`;
@@ -417,6 +442,11 @@ async function loadAdminGlobalTransactions() {
       elements.adminTxNextBtn.disabled = res.pagination.page >= res.pagination.total_pages;
     }
 
+    if (elements.adminLiveLastSync) {
+      const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      elements.adminLiveLastSync.textContent = `Updated ${nowTime}`;
+    }
+
     if (txs.length === 0) {
       elements.adminGlobalTxTbody.innerHTML = `
         <tr>
@@ -429,10 +459,11 @@ async function loadAdminGlobalTransactions() {
     }
 
     elements.adminGlobalTxTbody.innerHTML = txs
-      .map((tx) => {
+      .map((tx, idx) => {
         const isCredit = tx.type === 'credit';
+        const isFresh = isNewTx && idx === 0;
         return `
-          <tr>
+          <tr class="${isFresh ? 'new-row-pulse' : ''}">
             <td>
               <div style="font-weight: 600; color: #fff;">${escapeHtml(tx.account_name || 'Account')}</div>
               <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">
@@ -454,10 +485,10 @@ async function loadAdminGlobalTransactions() {
                 ${escapeHtml(tx.reference_id)}
               </span>
             </td>
-            <td style="color: var(--text-secondary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <td style="color: var(--text-secondary); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(tx.description || '')}">
               ${escapeHtml(tx.description || '—')}
             </td>
-            <td style="color: var(--text-muted); font-size: 0.8rem;">
+            <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">
               ${formatDate(tx.created_at)}
             </td>
           </tr>
@@ -465,7 +496,7 @@ async function loadAdminGlobalTransactions() {
       })
       .join('');
   } catch (err) {
-    if (elements.adminGlobalTxTbody) {
+    if (elements.adminGlobalTxTbody && !silent) {
       elements.adminGlobalTxTbody.innerHTML = `
         <tr>
           <td colspan="6" style="text-align: center; padding: 2rem; color: var(--color-debit);">
@@ -1301,11 +1332,72 @@ if (elements.adminTxNextBtn) {
   });
 });
 
+// Admin Workspace View Switching (Parallel vs Single Tabs)
+function setAdminViewMode(mode) {
+  if (!elements.adminParallelContainer) return;
+
+  elements.adminTabParallel?.classList.toggle('active', mode === 'parallel');
+  elements.adminTabParallel?.setAttribute('aria-selected', String(mode === 'parallel'));
+
+  elements.adminTabAccounts?.classList.toggle('active', mode === 'accounts');
+  elements.adminTabAccounts?.setAttribute('aria-selected', String(mode === 'accounts'));
+
+  elements.adminTabTransactions?.classList.toggle('active', mode === 'transactions');
+  elements.adminTabTransactions?.setAttribute('aria-selected', String(mode === 'transactions'));
+
+  elements.adminParallelContainer.classList.remove('view-accounts-only', 'view-transactions-only');
+  if (mode === 'accounts') {
+    elements.adminParallelContainer.classList.add('view-accounts-only');
+  } else if (mode === 'transactions') {
+    elements.adminParallelContainer.classList.add('view-transactions-only');
+  }
+}
+
+if (elements.adminTabParallel) {
+  elements.adminTabParallel.addEventListener('click', () => setAdminViewMode('parallel'));
+}
+if (elements.adminTabAccounts) {
+  elements.adminTabAccounts.addEventListener('click', () => setAdminViewMode('accounts'));
+}
+if (elements.adminTabTransactions) {
+  elements.adminTabTransactions.addEventListener('click', () => setAdminViewMode('transactions'));
+}
+
+// Live Polling Toggle
+if (elements.adminLiveToggleBtn) {
+  elements.adminLiveToggleBtn.addEventListener('click', () => {
+    adminLivePaused = !adminLivePaused;
+    elements.adminLiveToggleBtn.classList.toggle('paused', adminLivePaused);
+    if (elements.adminLiveText) {
+      elements.adminLiveText.textContent = adminLivePaused ? 'PAUSED' : 'LIVE SYNC';
+    }
+    showToast({
+      title: adminLivePaused ? 'Live Sync Paused' : 'Live Sync Active',
+      message: adminLivePaused ? 'Automatic audit stream paused.' : 'Live updates resumed (every 4s).',
+      type: 'success',
+    });
+  });
+}
+
+// Live polling ticker function
+function startAdminLivePolling() {
+  if (adminPollInterval) clearInterval(adminPollInterval);
+  adminPollInterval = setInterval(async () => {
+    if (store.role === ROLES.ADMIN && !adminLivePaused && store.isBackendOnline) {
+      try {
+        await loadAdminGlobalTransactions(true);
+        await store.refreshAccounts();
+      } catch {
+        // Silently handled in background
+      }
+    }
+  }, 4000);
+}
+
 // Backend pill opens settings
 elements.backendStatusPill.addEventListener('click', () => {
   openModal(elements.modalApiSettings);
 });
-
 
 elements.retryConnectionBtn.addEventListener('click', checkHealthAndRefresh);
 
@@ -1318,6 +1410,7 @@ store.subscribe(() => {
 (async function init() {
   updateRoleUI();
   await checkHealthAndRefresh();
+  startAdminLivePolling();
 
   // Periodic health check every 15s
   setInterval(async () => {
