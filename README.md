@@ -9,10 +9,10 @@ A complete full-stack transaction ledger platform featuring an ACID-compliant Py
 
 | # | Deliverable | Location | Description |
 | :-: | :--- | :--- | :--- |
-| **1** | **Source Code** | [`backend/`](backend/) & [`frontend/`](frontend/) | Full-stack implementation: FastAPI, SQLite, Pydantic v2, Vite & Vanilla CSS UI |
-| **2** | **README** | [`README.md`](README.md) | System overview, local quickstart, automated test runner & Railway guide |
-| **3** | **API Documentation** | [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) | Complete REST API specs, error codes, cURL examples & Swagger UI links |
-| **4** | **Assumptions** | [`ASSUMPTIONS.md`](ASSUMPTIONS.md) | Financial precision, concurrency write locks, immutability & design trade-offs |
+| **1** | **Source Code** | [`backend/app/`](backend/app/) | Full ACID-compliant FastAPI backend & data models |
+| **2** | **README** | [`backend/README.md`](backend/README.md) | Backend specifications, local run instructions & architecture |
+| **3** | **API Documentation** | [`backend/API_DOCUMENTATION.md`](backend/API_DOCUMENTATION.md) | Dedicated REST API specs, error codes, cURL examples & Swagger links |
+| **4** | **Assumptions** | [`backend/ASSUMPTIONS.md`](backend/ASSUMPTIONS.md) | Monetary precision, concurrency write locks, immutability & design trade-offs |
 
 ---
 

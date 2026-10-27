@@ -4,6 +4,17 @@ A high-integrity, ACID-compliant ledger backend built with **Python 3.10+**, **F
 
 ---
 
+## 📦 Submission Deliverables
+
+| # | Deliverable | Location | Description |
+| :-: | :--- | :--- | :--- |
+| **1** | **Source Code** | [`app/`](app/) & [`tests/`](tests/) | Core FastAPI ledger service, SQLite triggers, Pydantic v2 schemas, and 30-case test suite |
+| **2** | **README** | [`README.md`](README.md) | Local run instructions, requirements, test runner, and API overview |
+| **3** | **API Documentation** | [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) | Dedicated specification with cURL examples, error contracts & Swagger link |
+| **4** | **Assumptions** | [`ASSUMPTIONS.md`](ASSUMPTIONS.md) | Precision, concurrency locks, append-only immutability, and idempotency guarantees |
+
+---
+
 ## 🚀 Running Backend Locally
 
 ### 1. Prerequisites

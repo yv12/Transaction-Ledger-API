@@ -9,7 +9,7 @@ A complete, high-integrity REST API reference for the **Aether Transaction Ledge
 | Environment | Base URL | Interactive Swagger UI | ReDoc Specification |
 | :--- | :--- | :--- | :--- |
 | **Local Development** | `http://127.0.0.1:8000` | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) | [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) |
-| **Production (Railway)** | `https://<your-app>.up.railway.app` | `https://<your-app>.up.railway.app/docs` | `https://<your-app>.up.railway.app/redoc` |
+| **Production (Railway)** | `https://transaction-ledger-api-data.up.railway.app` | [Live Swagger UI](https://transaction-ledger-api-data.up.railway.app/docs) | [Live ReDoc](https://transaction-ledger-api-data.up.railway.app/redoc) |
 | **OpenAPI 3.1 Spec** | `/openapi.json` | Import directly into Postman, Insomnia, or Swagger Editor | |
 
 ---
