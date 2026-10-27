@@ -1,0 +1,1020 @@
+{
+  "total": 49,
+  "passed": 46,
+  "failed": 3,
+  "results": [
+    {
+      "area": "1. Duplicates",
+      "name": "Same reference_id twice on same account",
+      "request": "POST /accounts/0f4cda30-3936-4178-9fe1-ff2f215b0241/transactions | Body: {\"type\": \"credit\", \"amount\": 100.0, \"reference_id\": \"dup-ref-eedee9\", \"description\": \"duplicate credit\"}",
+      "expected": "Status 409: Rejected with 409 DUPLICATE_TRANSACTION, balance remains 100.0",
+      "actual": "HTTP 409: {\"error\": {\"code\": \"DUPLICATE_TRANSACTION\", \"message\": \"A transaction with reference_id 'dup-ref-eedee9' already exists for this account\", \"details\": {\"id\": \"a236d288-9495-4c80-96f5-8a36315e... (truncated)",
+      "actual_status": 409,
+      "status": "PASS",
+      "notes": "Balance: 100.0",
+      "raw_response": {
+        "error": {
+          "code": "DUPLICATE_TRANSACTION",
+          "message": "A transaction with reference_id 'dup-ref-eedee9' already exists for this account",
+          "details": {
+            "id": "a236d288-9495-4c80-96f5-8a36315eecfe",
+            "account_id": "0f4cda30-3936-4178-9fe1-ff2f215b0241",
+            "type": "credit",
+            "amount": 100.0,
+            "description": "initial credit",
+            "reference_id": "dup-ref-eedee9",
+            "created_at": "2026-10-27T15:58:52.850353+00:00"
+          }
+        }
+      }
+    },
+    {
+      "area": "1. Duplicates",
+      "name": "10 parallel requests with same reference_id",
+      "request": "POST /accounts/c0437981-88dd-48a0-85c9-b54bd6780124/transactions | Body: {\"type\": \"credit\", \"amount\": 50.0, \"reference_id\": \"par-ref-ae6701\", \"description\": \"parallel test\"}",
+      "expected": "Status 201 x1, 409 x9: Exactly 1 request succeeds (201), 9 rejected with 409, balance = 50.0",
+      "actual": "HTTP 201: 1, 409: 0: {\"status_codes\": [500, 500, 500, 201, 500, 500, 500, 500, 500, 500], \"final_balance\": 50.0}",
+      "actual_status": "201: 1, 409: 0",
+      "status": "FAIL",
+      "notes": "201 count: 1, 409 count: 0, balance: 50.0",
+      "raw_response": {
+        "status_codes": [
+          500,
+          500,
+          500,
+          201,
+          500,
+          500,
+          500,
+          500,
+          500,
+          500
+        ],
+        "final_balance": 50.0
+      }
+    },
+    {
+      "area": "1. Duplicates",
+      "name": "Same reference_id with a different amount (tampered)",
+      "request": "POST /accounts/ba2611cb-82dc-43eb-b784-d639349483c6/transactions | Body: {\"type\": \"credit\", \"amount\": 200.0, \"reference_id\": \"diff-ref-537a1c\", \"description\": \"tampered amount\"}",
+      "expected": "Status 409: Rejected with 409 DUPLICATE_TRANSACTION, balance stays 100.0",
+      "actual": "HTTP 409: {\"error\": {\"code\": \"DUPLICATE_TRANSACTION\", \"message\": \"A transaction with reference_id 'diff-ref-537a1c' already exists for this account\", \"details\": {\"id\": \"ae09ae24-7e35-4c90-b01a-ce2cea3... (truncated)",
+      "actual_status": 409,
+      "status": "PASS",
+      "notes": "Balance: 100.0",
+      "raw_response": {
+        "error": {
+          "code": "DUPLICATE_TRANSACTION",
+          "message": "A transaction with reference_id 'diff-ref-537a1c' already exists for this account",
+          "details": {
+            "id": "ae09ae24-7e35-4c90-b01a-ce2cea336495",
+            "account_id": "ba2611cb-82dc-43eb-b784-d639349483c6",
+            "type": "credit",
+            "amount": 100.0,
+            "description": "",
+            "reference_id": "diff-ref-537a1c",
+            "created_at": "2026-10-27T15:58:54.992818+00:00"
+          }
+        }
+      }
+    },
+    {
+      "area": "2. Overdraw",
+      "name": "Parallel debits exceeding balance (5x30 against 100 balance)",
+      "request": "POST /accounts/6ec655d3-cd87-40dd-9106-db892d32c9d8/transactions | Body: 5 parallel debits of 30.0 each",
+      "expected": "Status 201 x3, 422 x2: Exactly 3 debits succeed (201), 2 fail (422 INSUFFICIENT_BALANCE), balance = 10.0, never negative",
+      "actual": "HTTP 201: 1, 422: 0: {\"codes\": [500, 500, 500, 500, 201], \"final_balance\": 70.0}",
+      "actual_status": "201: 1, 422: 0",
+      "status": "FAIL",
+      "notes": "Final balance: 70.0 (never < 0)",
+      "raw_response": {
+        "codes": [
+          500,
+          500,
+          500,
+          500,
+          201
+        ],
+        "final_balance": 70.0
+      }
+    },
+    {
+      "area": "2. Overdraw",
+      "name": "Debit exactly equal to balance (50.0 on 50.0)",
+      "request": "POST /accounts/4c6d7c0b-b2c3-4b3a-b57d-fe79de8a0e5b/transactions | Body: {\"type\": \"debit\", \"amount\": 50.0, \"reference_id\": \"exact-7a73db\"}",
+      "expected": "Status 201: Succeeds (201), final balance reaches exactly 0.0",
+      "actual": "HTTP 201: {\"id\": \"2fe03bf7-15c2-47a4-8004-16e0b01e7f1d\", \"account_id\": \"4c6d7c0b-b2c3-4b3a-b57d-fe79de8a0e5b\", \"type\": \"debit\", \"amount\": 50.0, \"description\": \"\", \"reference_id\": \"exact-7a73db\", \"crea... (truncated)",
+      "actual_status": 201,
+      "status": "PASS",
+      "notes": "Balance: 0.0",
+      "raw_response": {
+        "id": "2fe03bf7-15c2-47a4-8004-16e0b01e7f1d",
+        "account_id": "4c6d7c0b-b2c3-4b3a-b57d-fe79de8a0e5b",
+        "type": "debit",
+        "amount": 50.0,
+        "description": "",
+        "reference_id": "exact-7a73db",
+        "created_at": "2026-10-27T15:58:57.110496+00:00"
+      }
+    },
+    {
+      "area": "2. Overdraw",
+      "name": "Debit 0.01 above balance (50.01 on 50.0 balance)",
+      "request": "POST /accounts/fb4f7046-371d-4fcc-8a93-160fbfbc988a/transactions | Body: {\"type\": \"debit\", \"amount\": 50.01, \"reference_id\": \"above-993de9\"}",
+      "expected": "Status 422: Rejected with 422 INSUFFICIENT_BALANCE, balance unchanged at 50.0",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"INSUFFICIENT_BALANCE\", \"message\": \"Insufficient balance for this debit\", \"details\": {\"balance\": 50.0, \"requested\": 50.01}}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "Balance: 50.0",
+      "raw_response": {
+        "error": {
+          "code": "INSUFFICIENT_BALANCE",
+          "message": "Insufficient balance for this debit",
+          "details": {
+            "balance": 50.0,
+            "requested": 50.01
+          }
+        }
+      }
+    },
+    {
+      "area": "3. Amounts",
+      "name": "Amount: 0",
+      "request": "POST /accounts/02359175-3246-4d85-b81b-58e318119209/transactions | Body: {\"type\": \"credit\", \"amount\": 0, \"reference_id\": \"amt-0-699450\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR (gt=0)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"amount\", \"message\": \"Input should be greater than 0\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "amount",
+              "message": "Input should be greater than 0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "3. Amounts",
+      "name": "Amount: negative (-10.5)",
+      "request": "POST /accounts/02359175-3246-4d85-b81b-58e318119209/transactions | Body: {\"type\": \"credit\", \"amount\": -10.5, \"reference_id\": \"amt-neg-e1270a\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR (gt=0)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"amount\", \"message\": \"Input should be greater than 0\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "amount",
+              "message": "Input should be greater than 0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "3. Amounts",
+      "name": "Amount: 0.001 (sub-cent fractional)",
+      "request": "POST /accounts/02359175-3246-4d85-b81b-58e318119209/transactions | Body: {\"type\": \"credit\", \"amount\": 0.001, \"reference_id\": \"amt-sub-370371\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR (max 2 decimal places)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"amount\", \"message\": \"Decimal input should have no more than 2 decimal places\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "amount",
+              "message": "Decimal input should have no more than 2 decimal places"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "3. Amounts",
+      "name": "Amount: 1e2 (scientific notation in JSON number)",
+      "request": "POST /accounts/02359175-3246-4d85-b81b-58e318119209/transactions | Body: {\"type\": \"credit\", \"amount\": 100.0, \"reference_id\": \"amt-1e2-85ff09\"}",
+      "expected": "Status 201: Parses as valid 100.0",
+      "actual": "HTTP 201: {\"id\": \"f8a8b1fb-0b76-4157-aecb-10fde9d6071d\", \"account_id\": \"02359175-3246-4d85-b81b-58e318119209\", \"type\": \"credit\", \"amount\": 100.0, \"description\": \"\", \"reference_id\": \"amt-1e2-85ff09\", \"... (truncated)",
+      "actual_status": 201,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "id": "f8a8b1fb-0b76-4157-aecb-10fde9d6071d",
+        "account_id": "02359175-3246-4d85-b81b-58e318119209",
+        "type": "credit",
+        "amount": 100.0,
+        "description": "",
+        "reference_id": "amt-1e2-85ff09",
+        "created_at": "2026-10-27T15:58:57.185367+00:00"
+      }
+    },
+    {
+      "area": "3. Amounts",
+      "name": "Amount: \"10\" (string encoded number)",
+      "request": "POST /accounts/02359175-3246-4d85-b81b-58e318119209/transactions | Body: {\"type\": \"credit\", \"amount\": \"10\", \"reference_id\": \"amt-str-1465a4\"}",
+      "expected": "Status 201: Coerces decimal string \"10\" to 10.0",
+      "actual": "HTTP 201: {\"id\": \"aef05f4a-4c90-458d-b3a8-6c9bd890ba2f\", \"account_id\": \"02359175-3246-4d85-b81b-58e318119209\", \"type\": \"credit\", \"amount\": 10.0, \"description\": \"\", \"reference_id\": \"amt-str-1465a4\", \"c... (truncated)",
+      "actual_status": 201,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "id": "aef05f4a-4c90-458d-b3a8-6c9bd890ba2f",
+        "account_id": "02359175-3246-4d85-b81b-58e318119209",
+        "type": "credit",
+        "amount": 10.0,
+        "description": "",
+        "reference_id": "amt-str-1465a4",
+        "created_at": "2026-10-27T15:58:57.197151+00:00"
+      }
+    },
+    {
+      "area": "3. Amounts",
+      "name": "Amount: null",
+      "request": "POST /accounts/02359175-3246-4d85-b81b-58e318119209/transactions | Body: {\"type\": \"credit\", \"amount\": null, \"reference_id\": \"amt-null-b5cc21\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"amount\", \"message\": \"Decimal input should be an integer, float, string or Decimal object\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "amount",
+              "message": "Decimal input should be an integer, float, string or Decimal object"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "3. Amounts",
+      "name": "Amount: huge number (> 15 digits)",
+      "request": "POST /accounts/02359175-3246-4d85-b81b-58e318119209/transactions | Body: {\"type\": \"credit\", \"amount\": 99999999999999999999, \"reference_id\": \"amt-huge-a6acff\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR (max_digits=15)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"amount\", \"message\": \"Decimal input should have no more than 15 digits in total\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "amount",
+              "message": "Decimal input should have no more than 15 digits in total"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "3. Amounts",
+      "name": "0.1 added 10 times (floating point precision check)",
+      "request": "POST /accounts/94e30f95-afce-4810-bfc7-d663b6888304/transactions | Body: 10x 0.1 credit",
+      "expected": "Status 200: Balance is exactly 1.0 without binary float drift",
+      "actual": "HTTP 200: Balance: 1.0",
+      "actual_status": 200,
+      "status": "PASS",
+      "notes": "Final balance: 1.0",
+      "raw_response": "Balance: 1.0"
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Missing type",
+      "request": "POST /accounts/8bd5a69e-f5db-476c-bc61-55cd45ebedcc/transactions | Body: {\"amount\": 50.0, \"reference_id\": \"ref-m1\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"type\", \"message\": \"Field required\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "type",
+              "message": "Field required"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Missing amount",
+      "request": "POST /accounts/8bd5a69e-f5db-476c-bc61-55cd45ebedcc/transactions | Body: {\"type\": \"credit\", \"reference_id\": \"ref-m2\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"amount\", \"message\": \"Field required\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "amount",
+              "message": "Field required"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Missing reference_id",
+      "request": "POST /accounts/8bd5a69e-f5db-476c-bc61-55cd45ebedcc/transactions | Body: {\"type\": \"credit\", \"amount\": 50.0}",
+      "expected": "Status 422: 422 VALIDATION_ERROR",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"reference_id\", \"message\": \"Field required\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "reference_id",
+              "message": "Field required"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Account creation missing name",
+      "request": "POST /accounts | Body: {}",
+      "expected": "Status 422: 422 VALIDATION_ERROR",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"name\", \"message\": \"Field required\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "name",
+              "message": "Field required"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Extra fields on account creation (client trying to set balance)",
+      "request": "POST /accounts | Body: {\"name\": \"Charlie\", \"balance\": 1000.0, \"is_admin\": true}",
+      "expected": "Status 422: 422 VALIDATION_ERROR (extra forbidden)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"balance\", \"message\": \"Extra inputs are not permitted\"}, {\"field\": \"is_admin\", \"message\": \"Ext... (truncated)",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "balance",
+              "message": "Extra inputs are not permitted"
+            },
+            {
+              "field": "is_admin",
+              "message": "Extra inputs are not permitted"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Extra fields on transaction creation",
+      "request": "POST /accounts/8bd5a69e-f5db-476c-bc61-55cd45ebedcc/transactions | Body: {\"type\": \"credit\", \"amount\": 10.0, \"reference_id\": \"ref-extra-b1c273\", \"status\": \"approved\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"status\", \"message\": \"Extra inputs are not permitted\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "status",
+              "message": "Extra inputs are not permitted"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Wrong type: amount as boolean True",
+      "request": "POST /accounts/8bd5a69e-f5db-476c-bc61-55cd45ebedcc/transactions | Body: {\"amount\": true}",
+      "expected": "Status 422: 422 VALIDATION_ERROR",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"amount\", \"message\": \"Decimal input should be an integer, float, string or Decimal object\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "amount",
+              "message": "Decimal input should be an integer, float, string or Decimal object"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Wrong type: name as integer 12345",
+      "request": "POST /accounts | Body: {\"name\": 12345}",
+      "expected": "Status 422 or coerced string: Type handled without 500 error",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"name\", \"message\": \"Input should be a valid string\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "name",
+              "message": "Input should be a valid string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Whitespace string: name='   '",
+      "request": "POST /accounts | Body: {\"name\": \"   \"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR (min_length=1 after strip)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"name\", \"message\": \"String should have at least 1 character\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "name",
+              "message": "String should have at least 1 character"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Whitespace string: reference_id='   '",
+      "request": "POST /accounts/8bd5a69e-f5db-476c-bc61-55cd45ebedcc/transactions | Body: {\"reference_id\": \"   \"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR (min_length=1 after strip)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"reference_id\", \"message\": \"String should have at least 1 character\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "reference_id",
+              "message": "String should have at least 1 character"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "10,000 character string for account name",
+      "request": "POST /accounts | Body: {\"name\": \"A*10000\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR (max_length=100)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"name\", \"message\": \"String should have at most 100 characters\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "name",
+              "message": "String should have at most 100 characters"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "10,000 character string for reference_id",
+      "request": "POST /accounts/8bd5a69e-f5db-476c-bc61-55cd45ebedcc/transactions | Body: {\"reference_id\": \"A*10000\"}",
+      "expected": "Status 422: 422 VALIDATION_ERROR (max_length=100)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"reference_id\", \"message\": \"String should have at most 100 characters\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "reference_id",
+              "message": "String should have at most 100 characters"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "SQL injection string in name",
+      "request": "POST /accounts | Body: {\"name\": \"Robert'); DROP TABLE accounts;--\"}",
+      "expected": "Status 201: Account created safely; parameterized query prevents SQL injection",
+      "actual": "HTTP 201: {\"id\": \"30ad5bfe-84ea-4786-bc53-6dc1638190f2\", \"name\": \"Robert'); DROP TABLE accounts;--\", \"balance\": 0.0, \"created_at\": \"2026-10-27T15:58:57.409947+00:00\"}",
+      "actual_status": 201,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "id": "30ad5bfe-84ea-4786-bc53-6dc1638190f2",
+        "name": "Robert'); DROP TABLE accounts;--",
+        "balance": 0.0,
+        "created_at": "2026-10-27T15:58:57.409947+00:00"
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Unicode / Emoji in account name",
+      "request": "POST /accounts | Body: {\"name\": \"Alice \\ud83d\\ude80\\ud83d\\udc8e\\u2728\"}",
+      "expected": "Status 201: Preserves unicode / emoji correctly",
+      "actual": "HTTP 201: {\"id\": \"ff0c0f9c-098e-4d1d-9ff2-0c9788ddb7a7\", \"name\": \"Alice \\ud83d\\ude80\\ud83d\\udc8e\\u2728\", \"balance\": 0.0, \"created_at\": \"2026-10-27T15:58:57.428413+00:00\"}",
+      "actual_status": 201,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "id": "ff0c0f9c-098e-4d1d-9ff2-0c9788ddb7a7",
+        "name": "Alice 🚀💎✨",
+        "balance": 0.0,
+        "created_at": "2026-10-27T15:58:57.428413+00:00"
+      }
+    },
+    {
+      "area": "4. Bad input",
+      "name": "Malformed JSON body syntax",
+      "request": "POST /accounts | Body: {not valid json: 'yes'",
+      "expected": "Status 422: 422 VALIDATION_ERROR (not 500 or raw exception)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"1\", \"message\": \"JSON decode error\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "1",
+              "message": "JSON decode error"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "5. Partial failure",
+      "name": "Mid-transfer failure (destination collision rolls back source debit)",
+      "request": "POST /transfers | Body: {\"from_account_id\": \"c0c94140-9cba-40df-bc16-ae02229b27fa\", \"to_account_id\": \"f9f758fe-0726-4ca4-9060-08cb88bdc8e7\", \"am... (truncated)",
+      "expected": "Status 409: Transfer fails with 409; atomic rollback leaves source balance at 100.0 with 0 debits recorded",
+      "actual": "HTTP 409: {\"error\": {\"code\": \"DUPLICATE_TRANSACTION\", \"message\": \"A transaction with reference_id 'collision-ref-123' already exists for this account\", \"details\": {\"id\": \"974c5d6b-ea91-4323-b453-f4ff4... (truncated)",
+      "actual_status": 409,
+      "status": "PASS",
+      "notes": "Source balance: 100.0, Dest balance: 50.0, Source tx count: 1",
+      "raw_response": {
+        "error": {
+          "code": "DUPLICATE_TRANSACTION",
+          "message": "A transaction with reference_id 'collision-ref-123' already exists for this account",
+          "details": {
+            "id": "974c5d6b-ea91-4323-b453-f4ff43ad0177",
+            "account_id": "f9f758fe-0726-4ca4-9060-08cb88bdc8e7",
+            "type": "credit",
+            "amount": 50.0,
+            "description": "",
+            "reference_id": "collision-ref-123",
+            "created_at": "2026-10-27T15:58:57.475446+00:00"
+          }
+        }
+      }
+    },
+    {
+      "area": "6. Transfers",
+      "name": "Transfer to self (source == destination)",
+      "request": "POST /transfers | Body: {\"from_account_id\": \"278b30a3-9756-4633-9bb4-0a0ba7a6628b\", \"to_account_id\": \"278b30a3-9756-4633-9bb4-0a0ba7a6628b\", \"am... (truncated)",
+      "expected": "Status 422: 422 INVALID_TRANSFER",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"INVALID_TRANSFER\", \"message\": \"Source and destination accounts must be different\", \"details\": null}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "INVALID_TRANSFER",
+          "message": "Source and destination accounts must be different",
+          "details": null
+        }
+      }
+    },
+    {
+      "area": "6. Transfers",
+      "name": "Transfer with missing destination account",
+      "request": "POST /transfers | Body: {\"from_account_id\": \"278b30a3-9756-4633-9bb4-0a0ba7a6628b\", \"to_account_id\": \"non-existent-ghost-account\", \"amount\": 20.... (truncated)",
+      "expected": "Status 404: 404 ACCOUNT_NOT_FOUND",
+      "actual": "HTTP 404: {\"error\": {\"code\": \"ACCOUNT_NOT_FOUND\", \"message\": \"Account 'non-existent-ghost-account' not found\", \"details\": null}}",
+      "actual_status": 404,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "ACCOUNT_NOT_FOUND",
+          "message": "Account 'non-existent-ghost-account' not found",
+          "details": null
+        }
+      }
+    },
+    {
+      "area": "6. Transfers",
+      "name": "Transfer exceeding balance (insufficient funds)",
+      "request": "POST /transfers | Body: {\"from_account_id\": \"46e3a6de-acfc-4b9a-9da3-46146c825742\", \"to_account_id\": \"278b30a3-9756-4633-9bb4-0a0ba7a6628b\", \"am... (truncated)",
+      "expected": "Status 422: 422 INSUFFICIENT_BALANCE",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"INSUFFICIENT_BALANCE\", \"message\": \"Insufficient balance for this debit\", \"details\": {\"balance\": 100.0, \"requested\": 500.0}}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "INSUFFICIENT_BALANCE",
+          "message": "Insufficient balance for this debit",
+          "details": {
+            "balance": 100.0,
+            "requested": 500.0
+          }
+        }
+      }
+    },
+    {
+      "area": "6. Transfers",
+      "name": "Duplicate reference on transfer",
+      "request": "POST /transfers | Body: {\"from_account_id\": \"278b30a3-9756-4633-9bb4-0a0ba7a6628b\", \"to_account_id\": \"46e3a6de-acfc-4b9a-9da3-46146c825742\", \"am... (truncated)",
+      "expected": "Status 409: 409 DUPLICATE_TRANSACTION",
+      "actual": "HTTP 409: {\"error\": {\"code\": \"DUPLICATE_TRANSACTION\", \"message\": \"A transaction with reference_id 'tr-dup-a20b26' already exists for this account\", \"details\": {\"id\": \"07cea2bf-0945-474a-a76e-437d5f9dd... (truncated)",
+      "actual_status": 409,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "DUPLICATE_TRANSACTION",
+          "message": "A transaction with reference_id 'tr-dup-a20b26' already exists for this account",
+          "details": {
+            "id": "07cea2bf-0945-474a-a76e-437d5f9ddfe1",
+            "account_id": "278b30a3-9756-4633-9bb4-0a0ba7a6628b",
+            "type": "debit",
+            "amount": 10.0,
+            "description": "Transfer to 46e3a6de-acfc-4b9a-9da3-46146c825742",
+            "reference_id": "tr-dup-a20b26",
+            "created_at": "2026-10-27T15:58:57.578156+00:00"
+          }
+        }
+      }
+    },
+    {
+      "area": "6. Transfers",
+      "name": "Concurrent A->B and B->A transfers (deadlock avoidance & conservation of money)",
+      "request": "POST /transfers | Body: 4x A->B (25.0) and 4x B->A (15.0) concurrent",
+      "expected": "Status All 201, Total money conserved: No deadlock, all transfers succeed (201), total system money preserved (1000.0)",
+      "actual": "HTTP Statuses: {201, 500}, Total money: 1000.0: {\"statuses\": [500, 500, 500, 500, 201, 500, 500, 201], \"initial_total\": 1000.0, \"final_total\": 1000.0, \"final_a\": 490.0, \"final_b\": 510.0}",
+      "actual_status": "Statuses: {201, 500}, Total money: 1000.0",
+      "status": "FAIL",
+      "notes": "Initial total: 1000.0, Final total: 1000.0",
+      "raw_response": {
+        "statuses": [
+          500,
+          500,
+          500,
+          500,
+          201,
+          500,
+          500,
+          201
+        ],
+        "initial_total": 1000.0,
+        "final_total": 1000.0,
+        "final_a": 490.0,
+        "final_b": 510.0
+      }
+    },
+    {
+      "area": "7. Immutability",
+      "name": "PUT /accounts/{id}/transactions/{tx_id}",
+      "request": "PUT /accounts/6d5c5141-23a5-4b89-a74c-a10c6ac3e53a/transactions/938b6b1b-b076-4dad-b112-debf8840d1b0 | Body: {\"amount\": 999.0}",
+      "expected": "Status 405: 405 Method Not Allowed / TRANSACTION_IMMUTABLE",
+      "actual": "HTTP 405: {\"error\": {\"code\": \"TRANSACTION_IMMUTABLE\", \"message\": \"Transactions cannot be edited or deleted\", \"details\": null}}",
+      "actual_status": 405,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "TRANSACTION_IMMUTABLE",
+          "message": "Transactions cannot be edited or deleted",
+          "details": null
+        }
+      }
+    },
+    {
+      "area": "7. Immutability",
+      "name": "PATCH /accounts/{id}/transactions/{tx_id}",
+      "request": "PATCH /accounts/6d5c5141-23a5-4b89-a74c-a10c6ac3e53a/transactions/938b6b1b-b076-4dad-b112-debf8840d1b0 | Body: {\"amount\": 999.0}",
+      "expected": "Status 405: 405 Method Not Allowed / TRANSACTION_IMMUTABLE",
+      "actual": "HTTP 405: {\"error\": {\"code\": \"TRANSACTION_IMMUTABLE\", \"message\": \"Transactions cannot be edited or deleted\", \"details\": null}}",
+      "actual_status": 405,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "TRANSACTION_IMMUTABLE",
+          "message": "Transactions cannot be edited or deleted",
+          "details": null
+        }
+      }
+    },
+    {
+      "area": "7. Immutability",
+      "name": "DELETE /accounts/{id}/transactions/{tx_id}",
+      "request": "DELETE /accounts/6d5c5141-23a5-4b89-a74c-a10c6ac3e53a/transactions/938b6b1b-b076-4dad-b112-debf8840d1b0",
+      "expected": "Status 405: 405 Method Not Allowed / TRANSACTION_IMMUTABLE",
+      "actual": "HTTP 405: {\"error\": {\"code\": \"TRANSACTION_IMMUTABLE\", \"message\": \"Transactions cannot be edited or deleted\", \"details\": null}}",
+      "actual_status": 405,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "TRANSACTION_IMMUTABLE",
+          "message": "Transactions cannot be edited or deleted",
+          "details": null
+        }
+      }
+    },
+    {
+      "area": "9. History",
+      "name": "History query with page=0",
+      "request": "GET /accounts/419a074d-2201-480b-b8c4-c26862e7cf1c/transactions?page=0",
+      "expected": "Status 422: 422 VALIDATION_ERROR (page >= 1)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"page\", \"message\": \"Input should be greater than or equal to 1\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "page",
+              "message": "Input should be greater than or equal to 1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "9. History",
+      "name": "History query with page past the end (page=999)",
+      "request": "GET /accounts/419a074d-2201-480b-b8c4-c26862e7cf1c/transactions?page=999&limit=10",
+      "expected": "Status 200: 200 with data=[] and total_records=5",
+      "actual": "HTTP 200: {\"account_id\": \"419a074d-2201-480b-b8c4-c26862e7cf1c\", \"data\": [], \"pagination\": {\"page\": 999, \"limit\": 10, \"total_records\": 5, \"total_pages\": 1}}",
+      "actual_status": 200,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "account_id": "419a074d-2201-480b-b8c4-c26862e7cf1c",
+        "data": [],
+        "pagination": {
+          "page": 999,
+          "limit": 10,
+          "total_records": 5,
+          "total_pages": 1
+        }
+      }
+    },
+    {
+      "area": "9. History",
+      "name": "History query with limit=0",
+      "request": "GET /accounts/419a074d-2201-480b-b8c4-c26862e7cf1c/transactions?limit=0",
+      "expected": "Status 422: 422 VALIDATION_ERROR (limit >= 1)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"limit\", \"message\": \"Input should be greater than or equal to 1\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "limit",
+              "message": "Input should be greater than or equal to 1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "9. History",
+      "name": "History query with limit=101",
+      "request": "GET /accounts/419a074d-2201-480b-b8c4-c26862e7cf1c/transactions?limit=101",
+      "expected": "Status 422: 422 VALIDATION_ERROR (limit <= 100)",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"limit\", \"message\": \"Input should be less than or equal to 100\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "limit",
+              "message": "Input should be less than or equal to 100"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "9. History",
+      "name": "History query with invalid type parameter (?type=invalid_type)",
+      "request": "GET /accounts/419a074d-2201-480b-b8c4-c26862e7cf1c/transactions?type=invalid_type",
+      "expected": "Status 422: 422 VALIDATION_ERROR",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"type\", \"message\": \"Input should be 'credit' or 'debit'\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "type",
+              "message": "Input should be 'credit' or 'debit'"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "9. History",
+      "name": "Ordering with rapidly added same-time transactions",
+      "request": "GET /accounts/99eec810-b2d2-4ff1-831b-8f1068be8aea/transactions?limit=10",
+      "expected": "Status 200: Deterministic newest-first order: ['time-3-7704ae', 'time-2-057ba4', 'time-1-180416', 'time-0-999f92']",
+      "actual": "HTTP 200: ['time-3-7704ae', 'time-2-057ba4', 'time-1-180416', 'time-0-999f92']",
+      "actual_status": 200,
+      "status": "PASS",
+      "notes": "Returned: ['time-3-7704ae', 'time-2-057ba4', 'time-1-180416', 'time-0-999f92']",
+      "raw_response": [
+        "time-3-7704ae",
+        "time-2-057ba4",
+        "time-1-180416",
+        "time-0-999f92"
+      ]
+    },
+    {
+      "area": "10. Error format",
+      "name": "Error shape verification: 404 Account Not Found",
+      "request": "VARIOUS VARIOUS",
+      "expected": "Status 404: Standard shape {'error': {'code': str, 'message': str, 'details': ...}}, no stack traces",
+      "actual": "HTTP 404: {\"error\": {\"code\": \"ACCOUNT_NOT_FOUND\", \"message\": \"Account 'non-existent-acc-123' not found\", \"details\": null}}",
+      "actual_status": 404,
+      "status": "PASS",
+      "notes": "Consistent error format verified",
+      "raw_response": {
+        "error": {
+          "code": "ACCOUNT_NOT_FOUND",
+          "message": "Account 'non-existent-acc-123' not found",
+          "details": null
+        }
+      }
+    },
+    {
+      "area": "10. Error format",
+      "name": "Error shape verification: 422 Validation Error",
+      "request": "VARIOUS VARIOUS",
+      "expected": "Status 422: Standard shape {'error': {'code': str, 'message': str, 'details': ...}}, no stack traces",
+      "actual": "HTTP 422: {\"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"Invalid request data\", \"details\": [{\"field\": \"name\", \"message\": \"Field required\"}]}}",
+      "actual_status": 422,
+      "status": "PASS",
+      "notes": "Consistent error format verified",
+      "raw_response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request data",
+          "details": [
+            {
+              "field": "name",
+              "message": "Field required"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "area": "10. Error format",
+      "name": "Error shape verification: 409 Duplicate Transaction",
+      "request": "VARIOUS VARIOUS",
+      "expected": "Status 409: Standard shape {'error': {'code': str, 'message': str, 'details': ...}}, no stack traces",
+      "actual": "HTTP 409: {\"error\": {\"code\": \"DUPLICATE_TRANSACTION\", \"message\": \"A transaction with reference_id 'dup-ref-eedee9' already exists for this account\", \"details\": {\"id\": \"a236d288-9495-4c80-96f5-8a36315e... (truncated)",
+      "actual_status": 409,
+      "status": "PASS",
+      "notes": "Consistent error format verified",
+      "raw_response": {
+        "error": {
+          "code": "DUPLICATE_TRANSACTION",
+          "message": "A transaction with reference_id 'dup-ref-eedee9' already exists for this account",
+          "details": {
+            "id": "a236d288-9495-4c80-96f5-8a36315eecfe",
+            "account_id": "0f4cda30-3936-4178-9fe1-ff2f215b0241",
+            "type": "credit",
+            "amount": 100.0,
+            "description": "initial credit",
+            "reference_id": "dup-ref-eedee9",
+            "created_at": "2026-10-27T15:58:52.850353+00:00"
+          }
+        }
+      }
+    },
+    {
+      "area": "10. Error format",
+      "name": "Error shape verification: 405 Immutability Error",
+      "request": "VARIOUS VARIOUS",
+      "expected": "Status 405: Standard shape {'error': {'code': str, 'message': str, 'details': ...}}, no stack traces",
+      "actual": "HTTP 405: {\"error\": {\"code\": \"TRANSACTION_IMMUTABLE\", \"message\": \"Transactions cannot be edited or deleted\", \"details\": null}}",
+      "actual_status": 405,
+      "status": "PASS",
+      "notes": "Consistent error format verified",
+      "raw_response": {
+        "error": {
+          "code": "TRANSACTION_IMMUTABLE",
+          "message": "Transactions cannot be edited or deleted",
+          "details": null
+        }
+      }
+    },
+    {
+      "area": "8. Reconciliation",
+      "name": "Full ledger reconciliation across all 60 accounts",
+      "request": "GET /accounts, /accounts/{id}/balance, /accounts/{id}/transactions",
+      "expected": "Status 200: balance == sum(credits) - sum(debits) with 0 mismatches across all accounts",
+      "actual": "HTTP 200: Reconciled 60 accounts, mismatches: 0",
+      "actual_status": 200,
+      "status": "PASS",
+      "notes": "All 60 accounts reconciled with 0 mismatches.",
+      "raw_response": "Reconciled 60 accounts, mismatches: 0"
+    }
+  ],
+  "reconciliation_failures": []
+}

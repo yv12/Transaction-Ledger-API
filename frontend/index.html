@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aether Ledger | Sovereign Financial Treasury</title>
+  <meta name="description" content="Decoupled high-integrity transaction ledger with unified role-based access for Admins and Account Holders.">
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <!-- Application Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand" id="brand-home-btn" title="Aether Ledger">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">Aether Ledger</div>
+          <div class="brand-subtitle">Core Banking & Treasury</div>
+        </div>
+      </div>
+
+      <!-- Role Switcher -->
+      <div class="role-switcher-container" role="tablist" aria-label="Role selector">
+        <button id="role-admin-btn" class="role-btn active admin" role="tab" aria-selected="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          Admin Console
+        </button>
+        <button id="role-user-btn" class="role-btn user" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Account Holder
+        </button>
+      </div>
+
+      <!-- Header Utilities -->
+      <div class="header-actions">
+        <button id="backend-status-pill" class="backend-pill" title="Click to view API endpoint settings">
+          <span id="backend-pulse" class="pulse-dot offline"></span>
+          <span id="backend-status-text">Connecting...</span>
+        </button>
+        
+        <div id="active-user-badge" class="user-badge" style="display: none; cursor: default;" title="Authenticated Customer Profile">
+          <div class="user-avatar" id="header-user-avatar">A</div>
+          <span id="header-user-name" style="font-weight: 600;">Account</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Body Content -->
+  <main class="main-content">
+    <!-- Offline Alert Notice -->
+    <div id="offline-banner" class="offline-banner" style="display: none;">
+      <div class="offline-banner-text">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>
+          <strong>Backend Disconnected:</strong> Cannot reach FastAPI at <code id="offline-url-text">http://127.0.0.1:8000</code>.
+          Run <code>uvicorn app.main:app --reload</code> in the project directory.
+        </span>
+      </div>
+      <button id="retry-connection-btn" class="btn btn-secondary btn-sm">Retry Connection</button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW: ADMIN DASHBOARD                      -->
+    <!-- ========================================== -->
+    <section id="view-admin" class="view-panel">
+      <div class="section-header">
+        <div>
+          <div class="section-title">
+            Treasury & Accounts Management
+            <span class="role-tag admin">Super Admin</span>
+          </div>
+          <div class="section-description">
+            Complete administrative overview of system liquidity, account provisionings, and inter-account ledger settlements.
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button id="admin-new-account-btn" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+              <line x1="20" y1="8" x2="20" y2="14"/>
+              <line x1="23" y1="11" x2="17" y2="11"/>
+            </svg>
+            Create Account
+          </button>
+          <button id="admin-transfer-btn" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 1l4 4-4 4"/>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+              <path d="M7 23l-4-4 4-4"/>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+            System Transfer
+          </button>
+        </div>
+      </div>
+
+      <!-- Admin Stat Metrics -->
+      <div class="metrics-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Total System Deposits</span>
+            <div class="stat-icon" style="color: var(--color-credit);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" id="stat-total-deposits">₹0.00</div>
+          <div class="stat-subtitle">Aggregate ledger balance</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-title">Registered Accounts</span>
+            <div class="stat-icon" style="color: var(--accent-primary);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" id="stat-total-accounts">0</div>
+          <div class="stat-subtitle">Active customer ledgers</div>
+        </div>
+      </div>
+
+      <!-- Accounts Table -->
+      <div class="table-card">
+        <div class="table-controls">
+          <div class="search-input-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="admin-search-input" class="search-input" placeholder="Search by name or account ID...">
+          </div>
+          <button id="admin-refresh-accounts-btn" class="btn btn-secondary btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        <div class="ledger-table-container">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>Account Holder</th>
+                <th>Account ID</th>
+                <th>Balance</th>
+                <th>Created (IST)</th>
+                <th style="text-align: right;">Administrative Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-accounts-tbody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- System-Wide Recent Transactions (Admin Audit Journal) -->
+      <div class="table-card" style="margin-top: 2rem;">
+        <div class="table-controls" style="flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <div class="section-title" style="font-size: 1.15rem; margin-bottom: 0;">System-Wide Transactions</div>
+            <span class="role-tag admin" style="font-size: 0.7rem;">Live Audit Ledger</span>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; align-items: center; margin-left: auto; flex-wrap: wrap;">
+            <div class="search-input-wrapper" style="max-width: 260px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="admin-tx-search" class="search-input" placeholder="Search narration or ref...">
+            </div>
+
+            <div class="filter-chips">
+              <button id="admin-tx-filter-all" class="filter-chip active" data-tx-filter="">All</button>
+              <button id="admin-tx-filter-credit" class="filter-chip" data-tx-filter="credit">Credits</button>
+              <button id="admin-tx-filter-debit" class="filter-chip" data-tx-filter="debit">Debits</button>
+            </div>
+
+            <button id="admin-refresh-tx-btn" class="btn btn-secondary btn-sm" title="Refresh global transactions">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <div class="ledger-table-container">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>Account</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Reference ID</th>
+                <th>Description</th>
+                <th>Created (Latest First)</th>
+              </tr>
+            </thead>
+            <tbody id="admin-global-tx-tbody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="admin-tx-pagination-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-top: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-muted);">
+          <span id="admin-tx-total-count">Showing latest transactions</span>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button id="admin-tx-prev-btn" class="btn btn-secondary btn-sm" disabled>&larr; Prev</button>
+            <span id="admin-tx-page-indicator" style="font-weight: 600; padding: 0 0.5rem; color: #fff;">Page 1</span>
+            <button id="admin-tx-next-btn" class="btn btn-secondary btn-sm" disabled>Next &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- VIEW: ACCOUNT HOLDER (CUSTOMER) DASHBOARD  -->
+    <!-- ========================================== -->
+    <section id="view-user" class="view-panel" style="display: none;">
+      <div class="section-header">
+        <div>
+          <div class="section-title">
+            Customer Banking Portal
+            <span class="role-tag user">Account Holder</span>
+          </div>
+          <div class="section-description">
+            View personal liquid balance, audit your immutable transaction ledger, and execute secure fund transfers.
+          </div>
+        </div>
+      </div>
+
+      <!-- No Account Alert State -->
+      <div id="user-no-account-state" class="empty-state" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <div class="empty-state-title">No Account Selected</div>
+        <p style="margin-bottom: 1.5rem; max-width: 480px; margin-left: auto; margin-right: auto; color: var(--text-secondary);">
+          Please select your registered customer profile to access your passbook. Bank account opening is strictly restricted to the Bank Administrator.
+        </p>
+        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+          <button id="user-select-profile-btn" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Select Customer Profile
+          </button>
+          <button id="user-goto-admin-btn" class="btn btn-secondary">
+            Switch to Admin Console
+          </button>
+        </div>
+      </div>
+
+      <!-- Customer Layout -->
+      <div id="user-active-layout" class="customer-layout">
+        <!-- Left Side: FinTech Card & Quick Actions -->
+        <div>
+          <div class="virtual-card-wrapper">
+            <div class="virtual-card">
+              <div class="card-top">
+                <div class="card-chip"></div>
+                <div class="card-network">AETHER • RUPAY</div>
+              </div>
+              <div class="card-balance-block">
+                <div class="card-balance-label">Available Balance</div>
+                <div class="card-balance-val" id="user-card-balance">₹0.00</div>
+              </div>
+              <div class="card-bottom">
+                <div>
+                  <div class="card-holder-name" id="user-card-name">Asha</div>
+                  <div class="card-account-id" id="user-card-id">ID: 00000000-0000</div>
+                </div>
+                <button id="user-refresh-balance-btn" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);" title="Refresh Balance">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6M1 20v-6h6"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Quick Action Buttons (Role-Compliant) -->
+          <div class="quick-actions-panel">
+            <button id="user-transfer-btn" class="btn btn-primary" style="width: 100%;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+              Send Transfer
+            </button>
+            <button id="user-quick-download-btn" class="btn btn-secondary" style="width: 100%;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Statement (CSV)
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Side: Statement Feed & Bank Filters -->
+        <div class="statement-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 700;">Account Statement & Summary</h3>
+              <div style="font-size: 0.775rem; color: var(--text-muted);">Official transaction passbook and audit records</div>
+            </div>
+            <span id="tx-total-count" style="font-size: 0.8rem; color: var(--text-muted);">0 transactions</span>
+          </div>
+
+          <!-- Filter Tabs for Transaction Type & Filter Toggle Button -->
+          <div class="filter-tabs" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 0.5rem; overflow-x: auto;">
+              <button class="tab-btn active" data-filter="">All Transactions</button>
+              <button class="tab-btn" data-filter="credit">Deposits / Inward (Cr)</button>
+              <button class="tab-btn" data-filter="debit">Withdrawals / Outward (Dr)</button>
+            </div>
+            <button type="button" id="btn-toggle-filters" class="btn btn-secondary btn-sm" style="margin-left: auto; display: inline-flex; align-items: center; gap: 0.45rem; flex-shrink: 0;" title="Toggle search & date range filters">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+              </svg>
+              <span id="filter-btn-text">Filter</span>
+              <span id="filter-active-badge" class="filter-badge" style="display: none;">Active</span>
+            </button>
+          </div>
+
+          <!-- Indian Banking Statement Filter Panel (Collapsible) -->
+          <div class="bank-filter-card" id="bank-filter-card">
+            <div class="filter-heading">
+              <span>Statement Period & Filters</span>
+              <button type="button" id="btn-close-filter-card" class="modal-close-btn" title="Hide Filters" style="font-size: 1.15rem; line-height: 1; padding: 0.15rem 0.4rem;">&times;</button>
+            </div>
+
+            <!-- Quick Period Presets (SBI/HDFC Style) -->
+            <div class="period-pill-list" id="period-presets">
+              <button type="button" class="period-pill active" data-period="all">All Records</button>
+              <button type="button" class="period-pill" data-period="today">Today</button>
+              <button type="button" class="period-pill" data-period="7days">Last 7 Days</button>
+              <button type="button" class="period-pill" data-period="1month">Last 1 Month</button>
+              <button type="button" class="period-pill" data-period="3months">Last 3 Months</button>
+              <button type="button" class="period-pill" data-period="fy">Current FY (2026-27)</button>
+              <button type="button" class="period-pill" data-period="custom">Custom Range</button>
+            </div>
+
+            <!-- Detailed Range & Search Inputs Grid -->
+            <div class="bank-filter-grid">
+              <div class="filter-field">
+                <label class="filter-label" for="filter-from-date">From Date</label>
+                <input type="date" id="filter-from-date" class="filter-input">
+              </div>
+
+              <div class="filter-field">
+                <label class="filter-label" for="filter-to-date">To Date</label>
+                <input type="date" id="filter-to-date" class="filter-input">
+              </div>
+
+              <div class="filter-field">
+                <label class="filter-label" for="filter-min-amount">Min Amount (₹)</label>
+                <input type="number" id="filter-min-amount" class="filter-input mono" placeholder="₹ Min" min="0" step="1">
+              </div>
+
+              <div class="filter-field">
+                <label class="filter-label" for="filter-max-amount">Max Amount (₹)</label>
+                <input type="number" id="filter-max-amount" class="filter-input mono" placeholder="₹ Max" min="0" step="1">
+              </div>
+
+              <div class="filter-field" style="grid-column: span 2;">
+                <label class="filter-label" for="filter-search-input">Narration / UTR Reference</label>
+                <input type="text" id="filter-search-input" class="filter-input" placeholder="Search description, memo, reference...">
+              </div>
+            </div>
+
+            <!-- Filter Actions Bar -->
+            <div class="filter-actions">
+              <button type="button" id="btn-apply-filters" class="btn btn-primary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                Apply Filters
+              </button>
+              <button type="button" id="btn-reset-filters" class="btn btn-secondary btn-sm">
+                Reset
+              </button>
+              <button type="button" id="btn-download-csv" class="btn btn-secondary btn-sm" style="margin-left: auto;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download Statement (CSV)
+              </button>
+            </div>
+          </div>
+
+          <!-- Statement Financial Summary Bar (Indian Bank Style) -->
+          <div class="statement-summary-bar" id="statement-summary-bar">
+            <div class="summary-stat">
+              <span class="summary-stat-label">Total Deposits (Cr)</span>
+              <span class="summary-stat-val credit" id="summary-total-credits">+₹0.00</span>
+            </div>
+            <div class="summary-stat">
+              <span class="summary-stat-label">Total Withdrawals (Dr)</span>
+              <span class="summary-stat-val debit" id="summary-total-debits">-₹0.00</span>
+            </div>
+            <div class="summary-stat">
+              <span class="summary-stat-label">Net Movement</span>
+              <span class="summary-stat-val net" id="summary-net-flow">₹0.00</span>
+            </div>
+            <div class="summary-stat">
+              <span class="summary-stat-label">Filtered Records</span>
+              <span class="summary-stat-val" id="summary-record-count" style="color: #fff;">0</span>
+            </div>
+          </div>
+
+          <!-- Transaction List -->
+          <div id="tx-feed-list" class="tx-feed">
+            <!-- Populated via JS -->
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar" id="pagination-controls" style="display: none;">
+            <button id="pagination-prev-btn" class="btn btn-secondary btn-sm">Previous</button>
+            <span id="pagination-page-info">Page 1 of 1</span>
+            <button id="pagination-next-btn" class="btn btn-secondary btn-sm">Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODALS                                     -->
+  <!-- ========================================== -->
+
+  <!-- Modal: Create Account -->
+  <div id="modal-create-account" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">Open New Bank Account</div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <form id="form-create-account">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="new-account-name">Account Holder Legal Name</label>
+            <input type="text" id="new-account-name" class="form-control" placeholder="e.g. Asha Patel" required maxlength="100">
+            <div class="form-hint">Accounts start with ₹0.00 initial balance as enforced by ledger rules.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-create-account">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Transfer Funds -->
+  <div id="modal-transfer" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="transfer-modal-title">Transfer Funds</div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <form id="form-transfer">
+        <div class="modal-body">
+          <!-- Source Account -->
+          <div class="form-group">
+            <label class="form-label" for="transfer-from-select">From Account</label>
+            <select id="transfer-from-select" class="form-control" required></select>
+          </div>
+
+          <!-- Destination Account -->
+          <div class="form-group">
+            <label class="form-label" for="transfer-to-select">To Recipient Account</label>
+            <select id="transfer-to-select" class="form-control" required></select>
+          </div>
+
+          <!-- Transfer Amount -->
+          <div class="form-group">
+            <label class="form-label" for="transfer-amount">Amount (₹ INR)</label>
+            <input type="number" id="transfer-amount" class="form-control mono" placeholder="0.00" step="0.01" min="0.01" required>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label class="form-label" for="transfer-desc">Description / Memo (Optional)</label>
+            <input type="text" id="transfer-desc" class="form-control" placeholder="e.g. Invoice settlement or Gift" maxlength="255">
+            <div class="form-hint">A unique transaction Reference ID is automatically generated when the transfer executes.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-transfer">Execute Transfer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Admin Direct Transaction (Credit / Debit) -->
+  <div id="modal-transaction" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="tx-modal-title">Post Direct Transaction</div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <form id="form-transaction">
+        <input type="hidden" id="tx-account-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Target Account</label>
+            <div id="tx-account-name-badge" style="font-weight: 700; color: #fff; margin-bottom: 0.5rem;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="tx-type-select">Transaction Type</label>
+            <select id="tx-type-select" class="form-control" required>
+              <option value="credit">Credit (Deposit to Account)</option>
+              <option value="debit">Debit (Deduct from Account)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="tx-amount">Amount (₹ INR)</label>
+            <input type="number" id="tx-amount" class="form-control mono" placeholder="0.00" step="0.01" min="0.01" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="tx-description">Description</label>
+            <input type="text" id="tx-description" class="form-control" placeholder="e.g. Salary, ATM withdrawal, Initial deposit" maxlength="255">
+            <div class="form-hint">A unique transaction Reference ID is automatically generated when posted.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-tx">Post Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Select / Switch Account Holder -->
+  <div id="modal-select-account" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">Select Account Holder</div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
+          Choose the customer profile you want to authenticate as:
+        </p>
+        <div id="account-selection-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 300px; overflow-y: auto;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close-modal>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: API Settings -->
+  <div id="modal-api-settings" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">API Connection Settings</div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <form id="form-api-settings">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="api-url-input">FastAPI Backend URL</label>
+            <input type="url" id="api-url-input" class="form-control mono" value="http://127.0.0.1:8000" required>
+            <div class="form-hint">Default: http://127.0.0.1:8000</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Reconnect</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Admin Account Statement Viewer -->
+  <div id="modal-admin-statement" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 780px;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="statement-modal-title">Account Statement</div>
+          <div id="statement-modal-subtitle" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;"></div>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div class="filter-chips">
+            <button id="modal-stmt-filter-all" class="filter-chip active" data-filter="">All</button>
+            <button id="modal-stmt-filter-credit" class="filter-chip" data-filter="credit">Credits</button>
+            <button id="modal-stmt-filter-debit" class="filter-chip" data-filter="debit">Debits</button>
+          </div>
+          <div id="modal-stmt-balance" style="font-size: 1rem; font-weight: 700; color: var(--color-credit);"></div>
+        </div>
+
+        <div class="ledger-table-container" style="max-height: 360px; overflow-y: auto;">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Reference ID</th>
+                <th>Description</th>
+                <th>Date / Time</th>
+              </tr>
+            </thead>
+            <tbody id="modal-stmt-tbody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="modal-stmt-total" style="font-size: 0.85rem; color: var(--text-muted);">0 transactions</span>
+        <button type="button" class="btn btn-secondary" data-close-modal>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
