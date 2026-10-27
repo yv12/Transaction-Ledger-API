@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from contextlib import contextmanager
 
@@ -39,6 +40,9 @@ END;
 
 
 def init_db(path: str) -> None:
+    parent_dir = os.path.dirname(os.path.abspath(path))
+    if parent_dir and not os.path.exists(parent_dir):
+        os.makedirs(parent_dir, exist_ok=True)
     conn = sqlite3.connect(path)
     try:
         conn.execute("PRAGMA journal_mode=WAL")

@@ -77,6 +77,24 @@ Visit [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
+## 🚂 Railway Deployment (One-Click / Zero Config)
+
+This repository includes a production-grade multi-stage `Dockerfile` and `railway.json` pre-configured to build the frontend and serve both the REST API and the interactive UI seamlessly from a single unified container on Railway.
+
+### Deploy Steps:
+1. Push your repository to **GitHub**.
+2. Go to [railway.app](https://railway.app) and click **"New Project"** -> **"Deploy from GitHub repo"**.
+3. Select your `ledger-api` repository. Railway will automatically detect the root `Dockerfile`.
+4. In Railway project settings:
+   - Click **"Generate Domain"** under Networking (e.g. `https://your-ledger.up.railway.app`).
+   - *(Optional)* Add a **Persistent Volume** mounted at `/data` if you want your SQLite database to persist across deploys.
+5. Visit your generated domain:
+   - **Frontend Web UI**: `https://your-ledger.up.railway.app/`
+   - **Interactive API Docs (Swagger)**: `https://your-ledger.up.railway.app/docs`
+   - **Health Check Endpoint**: `https://your-ledger.up.railway.app/health`
+
+---
+
 ## 🧪 Running Automated Tests
 
 Run the backend test suite covering 30 scenarios including edge cases, duplicate checking, concurrency, rollback on failure, system-wide transaction history, and transaction immutability:

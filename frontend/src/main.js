@@ -946,10 +946,11 @@ function openSelectAccountModal() {
 // 5. API Settings Modal
 elements.formApiSettings.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const url = elements.apiUrlInput.value;
+  const url = elements.apiUrlInput.value.trim();
   setApiBaseUrl(url);
   closeModal(elements.modalApiSettings);
-  showToast({ title: 'Settings Saved', message: `API URL set to ${url}. Connecting...` });
+  const displayUrl = url || window.location.origin;
+  showToast({ title: 'Settings Saved', message: `API URL set to ${displayUrl}. Connecting...` });
   await checkHealthAndRefresh();
 });
 
@@ -957,8 +958,10 @@ elements.formApiSettings.addEventListener('submit', async (e) => {
 // HEALTH & AUTO REFRESH
 // ==========================================
 async function checkHealthAndRefresh() {
-  elements.offlineUrlText.textContent = getApiBaseUrl();
-  elements.apiUrlInput.value = getApiBaseUrl();
+  const currentBase = getApiBaseUrl();
+  const displayUrl = currentBase || (typeof window !== 'undefined' ? `${window.location.origin} (Same Origin)` : 'http://127.0.0.1:8000');
+  elements.offlineUrlText.textContent = displayUrl;
+  elements.apiUrlInput.value = currentBase || (typeof window !== 'undefined' ? window.location.origin : '');
 
   const isOnline = await store.checkHealth();
   if (isOnline) {

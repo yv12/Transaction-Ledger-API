@@ -1,22 +1,53 @@
 /**
  * Aether Ledger API Client
- * Connects to the FastAPI backend at http://127.0.0.1:8000
+ * Dynamically connects to the FastAPI backend locally or in production (Railway).
  */
 
-const DEFAULT_BASE_URL = 'http://127.0.0.1:8000';
+function resolveDefaultBaseUrl() {
+  if (import.meta.env?.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined') {
+    // When running locally via Vite dev server, default to local backend
+    if (window.location.hostname === 'localhost' && window.location.port === '5173') {
+      return 'http://127.0.0.1:8000';
+    }
+    // In production (Railway container or custom domain), use relative same-origin paths
+    return '';
+  }
+  return '';
+}
 
 export function getApiBaseUrl() {
-  return localStorage.getItem('aether_api_base_url') || DEFAULT_BASE_URL;
+  const saved = localStorage.getItem('aether_api_base_url');
+  if (saved) {
+    // If running in production, ignore and clear stale localhost/127.0.0.1 settings
+    if (
+      typeof window !== 'undefined' &&
+      window.location.hostname !== 'localhost' &&
+      window.location.hostname !== '127.0.0.1' &&
+      (saved.includes('localhost') || saved.includes('127.0.0.1'))
+    ) {
+      localStorage.removeItem('aether_api_base_url');
+      return resolveDefaultBaseUrl();
+    }
+    return saved;
+  }
+  return resolveDefaultBaseUrl();
 }
 
 export function setApiBaseUrl(url) {
-  const cleanUrl = url.trim().replace(/\/+$/, '');
-  localStorage.setItem('aether_api_base_url', cleanUrl);
+  const cleanUrl = url ? url.trim().replace(/\/+$/, '') : '';
+  if (!cleanUrl || (typeof window !== 'undefined' && cleanUrl === window.location.origin)) {
+    localStorage.removeItem('aether_api_base_url');
+  } else {
+    localStorage.setItem('aether_api_base_url', cleanUrl);
+  }
 }
 
 async function request(endpoint, options = {}) {
   const baseUrl = getApiBaseUrl();
-  const url = `${baseUrl}${endpoint}`;
+  const url = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
 
   const headers = {
     'Accept': 'application/json',
@@ -58,7 +89,8 @@ async function request(endpoint, options = {}) {
     return data;
   } catch (err) {
     if (err.name === 'TypeError' && err.message.includes('fetch')) {
-      const error = new Error(`Cannot connect to Ledger Backend at ${baseUrl}. Ensure the FastAPI server is running.`);
+      const displayUrl = baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'server');
+      const error = new Error(`Cannot connect to Ledger Backend at ${displayUrl}. Ensure the server is running.`);
       error.code = 'NETWORK_ERROR';
       throw error;
     }

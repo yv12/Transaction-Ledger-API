@@ -3,7 +3,8 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from . import services
 from .db import atomic, connect, init_db
@@ -27,7 +28,9 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
     if not db_path:
         db_path = os.getenv("LEDGER_DB")
         if not db_path:
-            if os.path.exists("ledger.db"):
+            if os.path.isdir("/data"):
+                db_path = "/data/ledger.db"
+            elif os.path.exists("ledger.db"):
                 db_path = "ledger.db"
             elif os.path.exists("../ledger.db"):
                 db_path = "../ledger.db"
@@ -148,6 +151,40 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
                 }
             },
         )
+
+    # Mount frontend static single-page application if dist is built
+    dist_candidates = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static")),
+        os.path.abspath(os.path.join(os.getcwd(), "frontend", "dist")),
+        os.path.abspath(os.path.join(os.getcwd(), "dist")),
+    ]
+    dist_dir = next(
+        (d for d in dist_candidates if os.path.isdir(d) and os.path.isfile(os.path.join(d, "index.html"))),
+        None,
+    )
+
+    if dist_dir:
+        assets_dir = os.path.join(dist_dir, "assets")
+        if os.path.isdir(assets_dir):
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+        @app.get("/", include_in_schema=False)
+        def serve_index():
+            return FileResponse(os.path.join(dist_dir, "index.html"))
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        def serve_spa(full_path: str):
+            api_prefixes = ("accounts", "transfers", "transactions", "health", "docs", "redoc", "openapi.json")
+            if any(full_path == p or full_path.startswith(f"{p}/") for p in api_prefixes):
+                return JSONResponse(
+                    status_code=404,
+                    content={"error": {"code": "NOT_FOUND", "message": "Endpoint not found"}},
+                )
+            file_path = os.path.join(dist_dir, full_path)
+            if os.path.isfile(file_path):
+                return FileResponse(file_path)
+            return FileResponse(os.path.join(dist_dir, "index.html"))
 
     return app
 
